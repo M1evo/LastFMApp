@@ -71,39 +71,45 @@ export default function SearchSection({
     onTabChange(tab);
   }, [onTabChange]);
 
-  /**
-   * Генерирует заголовок в зависимости от активной вкладки
-   * @returns {string} Текст заголовка
-   */
-  const getHeadingText = useCallback((): string => {
-    if (!query) return 'Search for music';
-    
-    const tabNames: Record<SearchTab, string> = {
-      top: 'Search results',
-      artists: 'Artists',
-      albums: 'Albums',
-      tracks: 'Tracks'
-    };
-    
-    return `${tabNames[activeTab]} for "${query}"`;
-  }, [query, activeTab]);
-
   return (
     <div className="search-header">
-      <h1 className="search-heading">{getHeadingText()}</h1>
+      <h1 className="search-heading">
+        {query ? `Search results for "${query}"` : 'Search'}
+      </h1>
 
       <div className="search-tabs" role="tablist">
-        {(['top', 'artists', 'albums', 'tracks'] as SearchTab[]).map(tab => (
-          <button
-            key={tab}
-            role="tab"
-            aria-selected={activeTab === tab}
-            className={`search-tab ${activeTab === tab ? 'search-tab-active' : ''}`}
-            onClick={(e) => handleTabClick(tab, e)}
-          >
-            {tab === 'top' ? 'Top Results' : tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
+        <button
+          role="tab"
+          aria-selected={activeTab === 'top'}
+          className={`search-tab ${activeTab === 'top' ? 'search-tab-active' : ''}`}
+          onClick={(e) => handleTabClick('top', e)}
+        >
+          Top Results
+        </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === 'artists'}
+          className={`search-tab ${activeTab === 'artists' ? 'search-tab-active' : ''}`}
+          onClick={(e) => handleTabClick('artists', e)}
+        >
+          Artists
+        </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === 'albums'}
+          className={`search-tab ${activeTab === 'albums' ? 'search-tab-active' : ''}`}
+          onClick={(e) => handleTabClick('albums', e)}
+        >
+          Albums
+        </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === 'tracks'}
+          className={`search-tab ${activeTab === 'tracks' ? 'search-tab-active' : ''}`}
+          onClick={(e) => handleTabClick('tracks', e)}
+        >
+          Tracks
+        </button>
       </div>
 
       <div className="search-input-wrapper">

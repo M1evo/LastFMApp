@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import searchIcon from '../images/search.svg';
+import logoImg from '../images/logo_small.png';
 
 /**
  * Компонент шапки сайта с навигацией
@@ -13,7 +14,9 @@ export default function Header(): JSX.Element {
     <header className="header">
       <div className="header-container">
         <div className="header-left">
-          <Link to="/" className="logo">Last.fm</Link>
+          <Link to="/" className="logo">
+            <img src={logoImg} alt="Last.fm" className="logo-img" />
+          </Link>
         </div>
         <nav className="header-right">
           <Link to="/search" className="search-link">
