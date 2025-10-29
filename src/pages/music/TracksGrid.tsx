@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { LastFmTrack } from '../api/types';
-import { getTopTracks } from '../api/api';
+import { LastFmTrack } from '../../api/types';
+import { getTopTracks } from '../../api/api';
 import TrackItem from './TrackItem';
 
 export default function TracksGrid() {

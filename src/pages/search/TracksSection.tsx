@@ -1,6 +1,6 @@
 import React from 'react';
-import { getImageUrl } from '../api/api';
-import { LastFmTrack } from '../api/types';
+import { getImageUrl } from '../../api/api';
+import { LastFmTrack } from '../../api/types';
 
 interface TracksSectionProps {
   tracks: LastFmTrack[];

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { LastFmArtist } from '../api/types';
-import { getTopArtists } from '../api/api';
+import { LastFmArtist } from '../../api/types';
+import { getTopArtists } from '../../api/api';
 import ArtistCard from './ArtistCard';
 
 export default function ArtistsGrid() {

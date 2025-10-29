@@ -1,6 +1,6 @@
 import React from 'react';
-import { LastFmAlbum } from '../api/types';
-import { getImageUrl } from '../api/api';
+import { LastFmAlbum } from '../../api/types';
+import { getImageUrl } from '../../api/api';
 
 interface AlbumsSectionProps {
   albums: LastFmAlbum[];

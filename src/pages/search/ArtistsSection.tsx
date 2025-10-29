@@ -1,6 +1,6 @@
 import React from 'react';
-import { LastFmArtist } from '../api/types';
-import { getImageUrl } from '../api/api';
+import { LastFmArtist } from '../../api/types';
+import { getImageUrl } from '../../api/api';
 
 interface ArtistsSectionProps {
   artists: LastFmArtist[];

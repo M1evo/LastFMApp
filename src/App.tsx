@@ -1,14 +1,21 @@
 import React from 'react';
 import { Route, Routes } from 'react-router-dom';
-import Music from './music/Music';
-import Search from './search/Search';
+import Layout from './components/Layout';
+import Music from './pages/music/Music';
+import Search from './pages/search/Search';
 
-function App() {
+/**
+ * Корневой компонент приложения с роутингом
+ * @returns {JSX.Element} Приложение
+ */
+function App(): JSX.Element {
   return (
-    <Routes>
-      <Route path="/" element={<Music />} />
-      <Route path="/search" element={<Search />} />
-    </Routes>
+    <Layout>
+      <Routes>
+        <Route path="/" element={<Music />} />
+        <Route path="/search" element={<Search />} />
+      </Routes>
+    </Layout>
   );
 }
 
