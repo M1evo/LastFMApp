@@ -1,27 +1,27 @@
 import {
   LastFmArtistsResponse,
   LastFmTracksResponse,
-  LastFmTopTagsResponse,
   LastFmImage,
   LastFmArtist,
   LastFmArtistSearchResponse,
   LastFmAlbum,
   LastFmAlbumSearchResponse,
   LastFmTrackSearchResponse,
-  LastFmTrack,
-  LastFmTopTags
+  LastFmTrack
 } from './types';
 
 const API_KEY = '91e4497c7ee6e5c159aaaa1385347e5e';
 const BASE_URL = 'https://ws.audioscrobbler.com/2.0/';
 
 /**
- * Выполняет запрос к API Last.fm с указанным методом и параметрами
- * @template T - Тип ожидаемого ответа от API
- * @param {string} method - Метод API Last.fm для вызова
- * @param {Record<string, string>} params - Дополнительные параметры запроса
- * @returns {Promise<T>} Промис с данными ответа от API
- * @throws {Error} Выбрасывает ошибку при неудачном HTTP-запросе или ошибке API
+ * Выполняет HTTP-запрос к Last.fm API с автоматической обработкой ошибок
+ * @template T Тип ожидаемого ответа от API
+ * @param {string} method Метод Last.fm API (например, 'chart.gettopartists')
+ * @param {Record<string, string>} params Объект с параметрами запроса
+ * @returns {Promise<T>} Промис, разрешающийся данными от API
+ * @throws {Error} Ошибка с информативным сообщением при сбое запроса
+ * @example
+ * const data = await fetchLastFmData<LastFmArtistsResponse>('chart.gettopartists', { limit: '10' });
  */
 export async function fetchLastFmData<T>(
   method: string,
@@ -38,208 +38,220 @@ export async function fetchLastFmData<T>(
 
   try {
     const response = await fetch(url.toString());
+    
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`Network error: ${response.status} ${response.statusText}`);
     }
+    
     const data = await response.json();
 
     if (data.error) {
-      throw new Error(data.message || 'API Error');
+      throw new Error(`API error: ${data.message || 'Unknown API error'}`);
     }
 
     return data as T;
   } catch (error) {
-    console.error('API Error:', error);
-    throw error;
+    if (error instanceof Error) {
+      console.error('Last.fm API Error:', error.message);
+      throw new Error(`Failed to fetch data from Last.fm: ${error.message}`);
+    }
+    throw new Error('Unknown error occurred while fetching data');
   }
 }
 
 /**
- * Извлекает URL изображения нужного размера из массива изображений Last.fm
- * @param {LastFmImage[]} images - Массив изображений от Last.fm API
- * @param {'small' | 'medium' | 'large' | 'extralarge' | 'mega'} size - Желаемый размер изображения
- * @returns {string | null} URL изображения или null, если изображение не найдено
+ * Извлекает URL изображения заданного размера из массива Last.fm
+ * @param {LastFmImage[]} images Массив изображений разных размеров
+ * @param {'small' | 'medium' | 'large' | 'extralarge' | 'mega'} size Требуемый размер
+ * @returns {string | null} URL изображения или null если не найдено
+ * @example
+ * const imageUrl = getImageUrl(artist.image, 'large');
  */
 export function getImageUrl(
   images: LastFmImage[],
   size: 'small' | 'medium' | 'large' | 'extralarge' | 'mega' = 'large'
 ): string | null {
-  if (!images || !Array.isArray(images)) return null;
+  if (!images || !Array.isArray(images) || images.length === 0) {
+    return null;
+  }
 
-  const sizeMap: Record<string, number> = {
-    'small': 0,
-    'medium': 1,
-    'large': 2,
-    'extralarge': 3,
-    'mega': 4
+  const sizeIndex: Record<string, number> = {
+    small: 0,
+    medium: 1,
+    large: 2,
+    extralarge: 3,
+    mega: 4
   };
 
-  const index = sizeMap[size];
+  const index = sizeIndex[size];
+  
+  if (index >= images.length) {
+    const lastImage = images[images.length - 1];
+    return lastImage?.['#text'] || null;
+  }
+
   const image = images[index];
-
-  return image && image['#text'] ? image['#text'] : null;
+  return image?.['#text'] || null;
 }
 
 /**
- * Форматирует теги артиста/трека в строку жанров, разделенную точками
- * @param {LastFmTopTags | undefined} tags - Объект тегов от Last.fm API
- * @returns {string} Строка с первыми 3 жанрами, разделенными символом "·"
+ * Нормализует данные API, которые могут быть массивом или одиночным объектом
+ * @template T Тип элементов данных
+ * @param {T | T[] | undefined} data Данные от API
+ * @returns {T[]} Всегда возвращает массив
+ * @example
+ * const artists = normalizeApiData(response.results.artistmatches.artist);
  */
-export function getGenres(tags?: LastFmTopTags): string {
-  return tags && tags.tag
-    ? tags.tag.slice(0, 3).map(tag => tag.name).join('\u00a0\u00b7\u00a0')
-    : '';
+function normalizeApiData<T>(data: T | T[] | undefined): T[] {
+  if (!data) return [];
+  return Array.isArray(data) ? data : [data];
 }
 
 /**
- * Получает список топовых артистов с их тегами
- * @param {number} limit - Количество артистов для получения (по умолчанию 12)
- * @returns {Promise<LastFmArtist[]>} Промис с массивом артистов, включая их теги
- * @throws {Error} Выбрасывает ошибку, если данные артистов не получены
+ * Получает список самых популярных артистов на данный момент
+ * @param {number} limit Количество артистов для получения (по умолчанию 12)
+ * @returns {Promise<LastFmArtist[]>} Массив артистов с их данными
+ * @throws {Error} Если не удалось получить данные артистов
+ * @example
+ * const topArtists = await getTopArtists(20);
  */
 export async function getTopArtists(limit: number = 12): Promise<LastFmArtist[]> {
-  const data = await fetchLastFmData<LastFmArtistsResponse>('chart.gettopartists', {
-    limit: limit.toString()
-  });
+  try {
+    const data = await fetchLastFmData<LastFmArtistsResponse>('chart.gettopartists', {
+      limit: limit.toString()
+    });
 
-  if (!data.artists || !data.artists.artist) {
-    throw new Error('No artists data received');
+    if (!data.artists?.artist) {
+      throw new Error('Invalid response structure: missing artists data');
+    }
+
+    return data.artists.artist;
+  } catch (error) {
+    console.error('Failed to fetch top artists:', error);
+    throw error;
   }
-
-  const artists = await Promise.all(
-    data.artists.artist.map(async artist => {
-      try {
-        const tags = await fetchLastFmData<LastFmTopTagsResponse>('artist.gettoptags', {
-          artist: artist.name,
-          limit: '3'
-        });
-        artist.tags = tags.toptags;
-        return artist;
-      } catch (error) {
-        console.warn(`Failed to fetch tags for ${artist.name}:`, error);
-        return artist;
-      }
-    })
-  );
-
-  return artists;
 }
 
 /**
- * Получает список топовых треков с их тегами
- * @param {number} limit - Количество треков для получения (по умолчанию 18)
- * @returns {Promise<LastFmTrack[]>} Промис с массивом треков, включая их теги
- * @throws {Error} Выбрасывает ошибку, если данные треков не получены
+ * Получает список самых популярных треков на данный момент
+ * @param {number} limit Количество треков для получения (по умолчанию 18)
+ * @returns {Promise<LastFmTrack[]>} Массив треков с их данными
+ * @throws {Error} Если не удалось получить данные треков
+ * @example
+ * const topTracks = await getTopTracks(30);
  */
 export async function getTopTracks(limit: number = 18): Promise<LastFmTrack[]> {
-  const data = await fetchLastFmData<LastFmTracksResponse>('chart.gettoptracks', {
-    limit: limit.toString()
-  });
+  try {
+    const data = await fetchLastFmData<LastFmTracksResponse>('chart.gettoptracks', {
+      limit: limit.toString()
+    });
 
-  if (!data.tracks || !data.tracks.track) {
-    throw new Error('No tracks data received');
+    if (!data.tracks?.track) {
+      throw new Error('Invalid response structure: missing tracks data');
+    }
+
+    return data.tracks.track;
+  } catch (error) {
+    console.error('Failed to fetch top tracks:', error);
+    throw error;
   }
-
-  const tracks = await Promise.all(
-    data.tracks.track.map(async track => {
-      try {
-        const tags = await fetchLastFmData<LastFmTopTagsResponse>('track.gettoptags', {
-          track: track.name,
-          artist: track.artist.name,
-          limit: '3'
-        });
-        track.tags = tags.toptags;
-        return track;
-      } catch (error) {
-        console.warn(`Failed to fetch tags for ${track.name}:`, error);
-        return track;
-      }
-    })
-  );
-
-  return tracks;
 }
 
 /**
- * Выполняет поиск артистов по запросу
- * @param {string} query - Поисковый запрос
- * @param {number} limit - Максимальное количество результатов (по умолчанию 10)
- * @returns {Promise<LastFmArtist[]>} Промис с массивом найденных артистов
+ * Выполняет поиск артистов по заданному запросу
+ * @param {string} query Поисковый запрос
+ * @param {number} limit Максимальное количество результатов (по умолчанию 10)
+ * @returns {Promise<LastFmArtist[]>} Массив найденных артистов
+ * @example
+ * const results = await searchArtists('Arctic Monkeys', 15);
  */
-export async function searchArtists(query: string, limit: number = 10): Promise<LastFmArtist[]> {
+export async function searchArtists(
+  query: string,
+  limit: number = 10
+): Promise<LastFmArtist[]> {
+  if (!query.trim()) {
+    return [];
+  }
+
   try {
     const data = await fetchLastFmData<LastFmArtistSearchResponse>('artist.search', {
       artist: query,
       limit: limit.toString()
     });
 
-    if (!data.results || !data.results.artistmatches || !data.results.artistmatches.artist) {
+    if (!data.results?.artistmatches?.artist) {
       return [];
     }
 
-    const artists = Array.isArray(data.results.artistmatches.artist)
-      ? data.results.artistmatches.artist
-      : [data.results.artistmatches.artist];
-
-    return artists;
+    return normalizeApiData(data.results.artistmatches.artist);
   } catch (error) {
-    console.error('Error searching artists:', error);
+    console.error('Failed to search artists:', error);
     return [];
   }
 }
 
 /**
- * Выполняет поиск альбомов по запросу
- * @param {string} query - Поисковый запрос
- * @param {number} limit - Максимальное количество результатов (по умолчанию 10)
- * @returns {Promise<LastFmAlbum[]>} Промис с массивом найденных альбомов
+ * Выполняет поиск альбомов по заданному запросу
+ * @param {string} query Поисковый запрос
+ * @param {number} limit Максимальное количество результатов (по умолчанию 10)
+ * @returns {Promise<LastFmAlbum[]>} Массив найденных альбомов
+ * @example
+ * const results = await searchAlbums('AM', 20);
  */
-export async function searchAlbums(query: string, limit: number = 10): Promise<LastFmAlbum[]> {
+export async function searchAlbums(
+  query: string,
+  limit: number = 10
+): Promise<LastFmAlbum[]> {
+  if (!query.trim()) {
+    return [];
+  }
+
   try {
     const data = await fetchLastFmData<LastFmAlbumSearchResponse>('album.search', {
       album: query,
       limit: limit.toString()
     });
 
-    if (!data.results || !data.results.albummatches || !data.results.albummatches.album) {
+    if (!data.results?.albummatches?.album) {
       return [];
     }
 
-    const albums = Array.isArray(data.results.albummatches.album)
-      ? data.results.albummatches.album
-      : [data.results.albummatches.album];
-
-    return albums;
+    return normalizeApiData(data.results.albummatches.album);
   } catch (error) {
-    console.error('Error searching albums:', error);
+    console.error('Failed to search albums:', error);
     return [];
   }
 }
 
 /**
- * Выполняет поиск треков по запросу
- * @param {string} query - Поисковый запрос
- * @param {number} limit - Максимальное количество результатов (по умолчанию 10)
- * @returns {Promise<LastFmTrack[]>} Промис с массивом найденных треков
+ * Выполняет поиск треков по заданному запросу
+ * @param {string} query Поисковый запрос
+ * @param {number} limit Максимальное количество результатов (по умолчанию 10)
+ * @returns {Promise<LastFmTrack[]>} Массив найденных треков
+ * @example
+ * const results = await searchTracks('Do I Wanna Know', 25);
  */
-export async function searchTracks(query: string, limit: number = 10): Promise<LastFmTrack[]> {
+export async function searchTracks(
+  query: string,
+  limit: number = 10
+): Promise<LastFmTrack[]> {
+  if (!query.trim()) {
+    return [];
+  }
+
   try {
     const data = await fetchLastFmData<LastFmTrackSearchResponse>('track.search', {
       track: query,
       limit: limit.toString()
     });
 
-    if (!data.results || !data.results.trackmatches || !data.results.trackmatches.track) {
+    if (!data.results?.trackmatches?.track) {
       return [];
     }
 
-    const tracks = Array.isArray(data.results.trackmatches.track)
-      ? data.results.trackmatches.track
-      : [data.results.trackmatches.track];
-
-    return tracks;
+    return normalizeApiData(data.results.trackmatches.track);
   } catch (error) {
-    console.error('Error searching tracks:', error);
+    console.error('Failed to search tracks:', error);
     return [];
   }
 }

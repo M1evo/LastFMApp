@@ -1,98 +1,125 @@
+.artists-grid-container,
+.tracks-grid-container {
+  min-height: 200px;
+}
+
 .artists-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 30px;
-  margin-bottom: 80px;
 }
 
 .artist-card {
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-decoration: none;
   color: inherit;
-  border-radius: 6px;
-  padding: 8px;
-  transition: background-color 0.2s;
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.3s ease;
+  background-color: transparent;
 }
 
 .artist-card:hover {
   background-color: #f5f5f5;
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.artist-avatar {
+.artist-image {
   width: 140px;
   height: 140px;
   border-radius: 50%;
   background-size: cover;
   background-position: center;
   margin-bottom: 12px;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.artist-card:hover .artist-image {
+  transform: scale(1.05);
 }
 
 .artist-name {
   font-weight: 600;
   font-size: 16px;
-  margin-bottom: 4px;
+  margin: 0 0 4px 0;
   text-align: center;
+  color: #000;
 }
 
-.artist-genres {
+.artist-info {
   font-size: 12px;
   color: #666;
   text-align: center;
+  margin: 0;
 }
 
 .tracks-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
+  gap: 16px;
 }
 
 .track-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px;
-  border-radius: 6px;
-  transition: background-color 0.2s;
+  padding: 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  text-decoration: none;
   color: inherit;
+  background-color: transparent;
 }
 
 .track-item:hover {
   background-color: #f5f5f5;
+  transform: translateX(4px);
 }
 
 .track-cover {
-  width: 50px;
-  height: 50px;
-  border-radius: 4px;
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
   background-size: cover;
   background-position: center;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
 }
 
-.track-info {
+.track-item:hover .track-cover {
+  transform: scale(1.05);
+}
+
+.track-details {
   flex: 1;
   min-width: 0;
 }
 
 .track-title {
   font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 2px;
+  font-size: 15px;
+  margin: 0 0 4px 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #000;
 }
 
 .track-artist {
-  font-size: 12px;
+  font-size: 13px;
   color: #666;
+  margin: 0 0 2px 0;
 }
 
-.track-genres {
-  font-size: 11px;
-  color: #888;
-  margin-top: 2px;
+.track-stats {
+  font-size: 12px;
+  color: #999;
+  margin: 0;
 }
 
 @media (max-width: 768px) {
@@ -101,12 +128,20 @@
     gap: 20px;
   }
 
-  .artist-avatar {
+  .artist-image {
     width: 100px;
     height: 100px;
   }
 
   .tracks-grid {
     grid-template-columns: 1fr;
+  }
+
+  .artist-name {
+    font-size: 14px;
+  }
+
+  .track-title {
+    font-size: 14px;
   }
 }
